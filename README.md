@@ -1,8 +1,15 @@
 # Artemis FACT Minimal Docker
 
-Minimal Docker image for the [FACT](https://github.com/Sharingcodeability/FACT) (Framework for Automated C-exercise Tests) used with [Artemis](https://github.com/ls1intum/Artemis) for automated C programming exercise assessment.
+Minimal Docker image for [FACT](https://github.com/Sharingcodeability/FACT) (Framework for Automated C-exercise Tests),
+used with [Artemis](https://github.com/ls1intum/Artemis) for automated assessment of C programming exercises in the
+[Operating Systems courses at the TU Dresden](https://tu-dresden.de/ing/informatik/sya/professur-fuer-betriebssysteme/studium/vorlesungen/bs).
 
-Replaces `sharingcodeability/fact:latest` (2.26 GB) with a ~450 MB image — a ~5x reduction.
+Forked from [ls1intum/artemis-fact-minimal-docker](https://github.com/ls1intum/artemis-fact-minimal-docker).
+
+## Changes Compared to Upstream
+
+- Adds [`strace`](https://strace.io/) so tests can trace the system calls of student programs.
+- Published to `ghcr.io/tud-os/artemis-fact-minimal-docker` instead of Docker Hub.
 
 ## Supported Architectures
 
@@ -20,7 +27,15 @@ Replaces `sharingcodeability/fact:latest` (2.26 GB) with a ~450 MB image — a ~
 
 ## Usage with Artemis
 
-Use `ls1tum/artemis-fact-minimal-docker:latest` (or the GHCR equivalent `ghcr.io/ls1intum/artemis-fact-minimal-docker:latest`) as the Docker image for C programming exercises in Artemis.
+Set the Docker image of the programming exercise to:
+
+```
+ghcr.io/tud-os/artemis-fact-minimal-docker:v1.0.0
+```
+
+Pin a version tag for exercises in a running course. `:latest` follows the `main` branch and may change at any time.
+
+> **Note on strace:** Tracing a program started by strace itself (`strace -f ./a.out`) works in an unprivileged container. Attaching to an already running process (`strace -p <pid>`) requires `CAP_SYS_PTRACE`, which Artemis build containers don't have.
 
 ## Local Build & Test
 
@@ -42,7 +57,10 @@ docker run --rm fact-test python3 -c "import fact; from clang.cindex import Inde
 # Check GCC
 docker run --rm fact-test gcc --version
 
-# Check user
+# Check strace (including tracing as the unprivileged user)
+docker run --rm fact-test strace -f -o /dev/null true && echo OK
+
+# Check user (must be uid 5000 for Artemis)
 docker run --rm fact-test id
 ```
 
@@ -64,15 +82,24 @@ print('All tests passed!' if t.successful() else 'TESTS FAILED')
 
 ## Multi-arch Build
 
+Check that the image builds for both architectures (the result stays in the build cache):
+
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 .
 ```
 
 ## Publishing
 
-Push a tag to trigger the CI workflow which builds and pushes to DockerHub and GitHub Container Registry:
+The CI workflow builds both architectures and pushes to GitHub Container Registry:
+
+- Push to `main` → `ghcr.io/tud-os/artemis-fact-minimal-docker:latest`
+- Push a tag → `ghcr.io/tud-os/artemis-fact-minimal-docker:<tag>`
 
 ```bash
 git tag v1.0.0
-git push --tags
+git push origin v1.0.0
 ```
+
+## License
+
+MIT, see [LICENSE](LICENSE). Based on work by [ls1intum](https://github.com/ls1intum).
