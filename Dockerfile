@@ -19,6 +19,7 @@ RUN apt-get update && \
         python3 \
         gcc libc6-dev make \
         libclang1-14 libclang-common-14-dev \
+        strace \
         sudo && \
     rm -rf /var/lib/apt/lists/*
 
